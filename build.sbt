@@ -8,6 +8,9 @@ lazy val `skyblue-play` = project.
   dependsOn(`skyblue-domain`)
 
 lazy val `skyblue-domain` = project.
-  settings(SkyblueSettings.commons)
+  settings(SkyblueSettings.commons).
+  settings(libraryDependencies ++= Seq(
+    "org.apache.tinkerpop" % "gremlin-driver" % "3.4.0",
+  ))
 
 lazy val root = Project("skyblue-root", file("."))
