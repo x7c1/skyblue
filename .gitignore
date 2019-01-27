@@ -1,7 +1,12 @@
-.DS_Store
+# scala
+target
 
+# project
+*.log
+
+# intellij
 .idea
 .idea_modules
 
-target
-
+# mac
+.DS_Store
