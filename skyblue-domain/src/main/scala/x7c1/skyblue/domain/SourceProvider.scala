@@ -9,14 +9,19 @@ import scala.concurrent.{ExecutionContext, Future}
 object SourceProvider {
   def apply(): SourceProvider = {
     val default = ClientConnector()
-    new SourceProvider(connector = default)
+    new SourceProviderImpl(connector = default)
   }
 }
 
-class SourceProvider private (connector: ClientConnector) {
-
+trait SourceProvider {
   def using[A](block: GraphTraversalSource => A)(
-      implicit context: ExecutionContext): Future[A] = {
+    implicit context: ExecutionContext): Future[A]
+}
+
+private class SourceProviderImpl(connector: ClientConnector) extends SourceProvider {
+
+  override def using[A](block: GraphTraversalSource => A)(
+    implicit context: ExecutionContext): Future[A] = {
 
     val result = connector
       .begin()
