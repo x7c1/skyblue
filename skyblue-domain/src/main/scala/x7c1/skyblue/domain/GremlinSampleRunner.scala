@@ -1,48 +1,35 @@
 package x7c1.skyblue.domain
 
-import org.apache.tinkerpop.gremlin.driver.remote.DriverRemoteConnection
-import org.apache.tinkerpop.gremlin.driver.{Client, Cluster}
-import org.apache.tinkerpop.gremlin.process.remote.RemoteConnection
-import org.apache.tinkerpop.gremlin.process.traversal.AnonymousTraversalSource
-import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.{
-  GraphTraversal,
-  GraphTraversalSource
-}
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.{GraphTraversal, GraphTraversalSource}
 import org.apache.tinkerpop.gremlin.structure.Vertex
 
 import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.util.control.NonFatal
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationDouble
+import scala.util.{Failure, Success}
 
 object GremlinSampleRunner {
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   def main(args: Array[String]): Unit = {
     println("start")
 
-    val cluster = Cluster.build
-      .addContactPoint("localhost")
-      .port(8182)
-      .create()
-
-    try {
-      val connection: RemoteConnection = {
-        val client: Client = cluster.connect()
-        DriverRemoteConnection.using(client, "g")
-      }
-      val g: GraphTraversalSource =
-        AnonymousTraversalSource
-          .traversal()
-          .withRemote(connection)
-
-      run(g)
-    } catch {
-      case NonFatal(e) =>
-        println("unexpected error", e)
+    val onFinish = (_: Seq[Int]).zipWithIndex.foreach {
+      case (v, k) =>
+        println(s"$k : $v")
     }
-    println("closing...", cluster)
-    cluster.close()
+    val future = SourceProvider().using(run).map(onFinish)
+    future.onComplete {
+      case Success(_) =>
+        println("[done]")
+      case Failure(e) =>
+        println("[unexpected]", e)
+    }
+    Await.ready(future, 10.seconds)
   }
 
-  def run(g: GraphTraversalSource): Unit = {
+  def run(g: GraphTraversalSource): Seq[Int] = {
     val marko: Vertex =
       g.addV("person")
         .property("name", "marko")
@@ -62,17 +49,13 @@ object GremlinSampleRunner {
       .property("weight", 0.6d)
       .iterate
 
-    val traversal: GraphTraversal[Vertex, Int] = g
-      .V()
-      .has("name", "marko")
-      .out("created")
-      .values("sample-value")
+    val traversal: GraphTraversal[Vertex, Int] =
+      g.V()
+        .has("name", "marko")
+        .out("created")
+        .values("sample-value")
 
     println("putting...", traversal)
-    val collection: Seq[Int] = traversal.toList.asScala
-    collection.zipWithIndex.foreach {
-      case (v, k) =>
-        println(s"$k : $v")
-    }
+    traversal.toList.asScala
   }
 }
