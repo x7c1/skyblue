@@ -19,7 +19,7 @@ object GremlinSampleRunner {
       case (v, k) =>
         println(s"$k : $v")
     }
-    val future = SourceProvider().using(run).map(onFinish)
+    val future = SourceProvider.forTest().using(run).map(onFinish)
     future.onComplete {
       case Success(_) =>
         println("[done]")
