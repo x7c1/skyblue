@@ -34,13 +34,6 @@ class ClientConnector private (create: () => Cluster) {
 
       val f1 = currentCluster.closeAsync()
       val f2 = f1.toScala.asInstanceOf[Future[Unit]]
-      f2 onComplete {
-        tr =>
-          println(tr, "closed!!!")
-          println("...", currentCluster.isClosed, currentCluster.isClosing)
-      }
-
-      println("...", currentCluster.isClosed, currentCluster.isClosing)
     }
   }
 
