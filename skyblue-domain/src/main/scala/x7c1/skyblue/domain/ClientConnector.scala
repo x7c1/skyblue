@@ -1,7 +1,8 @@
 package x7c1.skyblue.domain
 
 import org.apache.tinkerpop.gremlin.driver.{Client, Cluster}
-import scala.compat.java8.FutureConverters.CompletionStageOps
+import x7c1.skyblue.domain.FutureTimer.await
+
 import scala.concurrent.{ExecutionContext, Future}
 
 object ClientConnector {
@@ -16,39 +17,40 @@ object ClientConnector {
   }
 }
 
-class ClientConnector private (create: () => Cluster) {
+class ClientConnector private(create: () => Cluster) {
 
-  private var cluster: Option[Cluster] = None
+  private var maybeCluster: Option[Cluster] = None
 
   private val timer = new BufferingTimer(delay = 3000)
 
   def begin()(implicit context: ExecutionContext): Future[Client] = {
-    Future {
-      currentCluster.connect[Client]()
-    }
+    loadCluster() map (_.connect[Client]())
   }
 
   def end()(implicit context: ExecutionContext): Unit = {
-    timer.touch {
+    timer touch {
       println("closing cluster...")
-
-      val f1 = currentCluster.closeAsync()
-      val f2 = f1.toScala.asInstanceOf[Future[Unit]]
+      maybeCluster.foreach(_.closeAsync())
     }
   }
 
-  def currentCluster = {
-    cluster match {
-      case Some(c) =>
-        c
-      case None =>
-        assign()
+  private def loadCluster()(implicit c: ExecutionContext): Future[Cluster] =
+    synchronized {
+      maybeCluster match {
+        case Some(cluster) if cluster.isClosed =>
+          Future successful assign()
+        case Some(cluster) if cluster.isClosing =>
+          await(millis = 1000) flatMap (_ => loadCluster())
+        case Some(cluster) =>
+          Future successful cluster
+        case _ =>
+          Future successful assign()
+      }
     }
-  }
 
-  def assign(): Cluster = {
-    val c = create()
-    cluster = Some(c)
-    c
+  private def assign(): Cluster = synchronized {
+    val cluster = create()
+    maybeCluster = Some(cluster)
+    cluster
   }
 }
