@@ -7,8 +7,8 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSo
 import scala.concurrent.{ExecutionContext, Future}
 
 object SourceProvider {
-  def forTest()(implicit c: ExecutionContext): SourceProvider = {
-    val default = ClientConnector()
+  def autoCloseable()(implicit c: ExecutionContext): SourceProvider = {
+    val default = CloseableClientConnector()
     val provider = new SourceProviderImpl(connector = default)
     new ForTest(provider, onFinish = () => default.end())
   }

@@ -6,24 +6,55 @@ import x7c1.skyblue.domain.FutureTimer.await
 import scala.concurrent.{ExecutionContext, Future}
 
 object ClientConnector {
+
   def apply(): ClientConnector = {
-    val create = () => {
-      Cluster.build
-        .addContactPoint("localhost")
-        .port(8182)
-        .create()
-    }
-    new ClientConnector(create)
+    new ClientConnectorImpl(create())
+  }
+
+  private val create = () => {
+    Cluster.build
+      .addContactPoint("localhost")
+      .port(8182)
+      .create()
   }
 }
 
-class ClientConnector private(create: () => Cluster) {
+trait ClientConnector {
+  def begin()(implicit context: ExecutionContext): Future[Client]
+}
+
+private class ClientConnectorImpl(cluster: Cluster) extends ClientConnector {
+
+  override def begin()(implicit context: ExecutionContext): Future[Client] = {
+    Future successful cluster.connect[Client]()
+  }
+}
+
+/**
+  * module designed for testing.
+  * performance is so slow and not scalable.
+  */
+object CloseableClientConnector {
+
+  def apply(): CloseableClientConnector = {
+    new CloseableClientConnector(create)
+  }
+
+  private val create = () => {
+    Cluster.build
+      .addContactPoint("localhost")
+      .port(8182)
+      .create()
+  }
+}
+
+class CloseableClientConnector private(create: () => Cluster) extends ClientConnector {
 
   private var maybeCluster: Option[Cluster] = None
 
   private val timer = new BufferingTimer(delay = 3000)
 
-  def begin()(implicit context: ExecutionContext): Future[Client] = {
+  override def begin()(implicit context: ExecutionContext): Future[Client] = {
     loadCluster() map (_.connect[Client]())
   }
 

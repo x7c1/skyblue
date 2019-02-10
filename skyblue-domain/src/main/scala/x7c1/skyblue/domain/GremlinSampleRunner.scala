@@ -15,11 +15,10 @@ object GremlinSampleRunner {
   def main(args: Array[String]): Unit = {
     println("start")
 
-    val onFinish = (_: Seq[Int]).zipWithIndex.foreach {
-      case (v, k) =>
-        println(s"$k : $v")
+    val onFinish = (xs: Seq[Int]) => {
+      println(xs)
     }
-    val future = SourceProvider.forTest().using(run).map(onFinish)
+    val future = SourceProvider.autoCloseable().using(run).map(onFinish)
     future.onComplete {
       case Success(_) =>
         println("[done]")
