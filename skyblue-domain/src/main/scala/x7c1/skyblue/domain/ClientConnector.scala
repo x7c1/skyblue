@@ -31,9 +31,9 @@ private class ClientConnectorImpl(cluster: Cluster) extends ClientConnector {
 }
 
 /**
-  * module designed for testing.
-  * performance is so slow and not scalable.
-  */
+ * module designed for testing.
+ * performance is so slow and not scalable.
+ */
 object CloseableClientConnector {
 
   def apply(): CloseableClientConnector = {
@@ -48,7 +48,7 @@ object CloseableClientConnector {
   }
 }
 
-class CloseableClientConnector private(create: () => Cluster) extends ClientConnector {
+class CloseableClientConnector private (create: () => Cluster) extends ClientConnector {
 
   private var maybeCluster: Option[Cluster] = None
 

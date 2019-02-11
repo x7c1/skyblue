@@ -7,20 +7,21 @@ import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSo
 import scala.concurrent.{ExecutionContext, Future}
 
 object SourceProvider {
+
   def autoCloseable()(implicit c: ExecutionContext): SourceProvider = {
     val default = CloseableClientConnector()
     val provider = new SourceProviderImpl(connector = default)
-    new ForTest(provider, onFinish = () => default.end())
+    new CloseableProviderImpl(provider, onFinish = () => default.end())
   }
 }
 
 trait SourceProvider {
+
   def using[A](block: GraphTraversalSource => A)(
       implicit context: ExecutionContext): Future[A]
 }
 
-private class SourceProviderImpl(connector: ClientConnector)
-    extends SourceProvider {
+private class SourceProviderImpl(connector: ClientConnector) extends SourceProvider {
 
   override def using[A](block: GraphTraversalSource => A)(
       implicit context: ExecutionContext): Future[A] = {
@@ -33,8 +34,8 @@ private class SourceProviderImpl(connector: ClientConnector)
   }
 }
 
-private class ForTest(provider: SourceProvider, onFinish: () => Unit)
-    extends SourceProvider {
+private class CloseableProviderImpl(provider: SourceProvider, onFinish: () => Unit)
+  extends SourceProvider {
 
   override def using[A](block: GraphTraversalSource => A)(
       implicit context: ExecutionContext): Future[A] = {
