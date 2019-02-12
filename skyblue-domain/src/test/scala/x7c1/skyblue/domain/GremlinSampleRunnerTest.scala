@@ -1,25 +1,51 @@
 package x7c1.skyblue.domain
 
-import org.scalatest.{FlatSpec, Matchers}
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success}
+import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal
+import org.apache.tinkerpop.gremlin.structure.Vertex
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import x7c1.skyblue.domain.SourceProviderInitializer.clean
 
-class GremlinSampleRunnerTest extends FlatSpec with Matchers {
+import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.concurrent.Future
+
+class GremlinSampleRunnerTest extends FlatSpec with Matchers with BeforeAndAfter {
   import scala.concurrent.ExecutionContext.Implicits.global
 
+  private lazy val provider = SourceProvider.autoCloseable()
+
+  before {
+    clean(provider)
+  }
+
   "runner" can "connect to gremlin server" in {
-    val onFinish = (xs: Seq[Int]) => {
-      println(xs)
+    val await(xs): Future[Seq[Int]] = provider using { g =>
+      val marko: Vertex =
+        g.addV("person")
+          .property("name", "marko")
+          .property("age", 29)
+          .next
+
+      val lop: Vertex =
+        g.addV("software")
+          .property("name", "lop")
+          .property("lang", "java")
+          .property("sample-value", 345)
+          .next
+
+      g.addE("created")
+        .from(marko)
+        .to(lop)
+        .property("weight", 0.6d)
+        .iterate
+
+      val traversal: GraphTraversal[Vertex, Int] =
+        g.V()
+          .has("name", "marko")
+          .out("created")
+          .values("sample-value")
+
+      traversal.toList.asScala
     }
-    val future = SourceProvider.autoCloseable().using(GremlinSampleRunner.run).map(onFinish)
-    future.onComplete {
-      case Success(_) =>
-        println("[done]")
-      case Failure(e) =>
-        println("[unexpected]", e)
-    }
-    Await.ready(future, 10.seconds)
-    true shouldBe true
+    xs shouldBe Seq(345)
   }
 }
