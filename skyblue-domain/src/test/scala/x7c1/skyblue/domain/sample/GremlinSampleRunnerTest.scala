@@ -1,17 +1,25 @@
-package x7c1.skyblue.domain
+package x7c1.skyblue.domain.sample
 
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal
 import org.apache.tinkerpop.gremlin.structure.Vertex
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import x7c1.skyblue.domain.SourceProviderInitializer.clean
+import x7c1.skyblue.domain.SourceProvider
+import x7c1.skyblue.domain.sample.SourceProviderInitializer.clean
 
 import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits
+import scala.concurrent.{ExecutionContext, Future}
 
-class GremlinSampleRunnerTest extends FlatSpec with Matchers with BeforeAndAfter {
-  import scala.concurrent.ExecutionContext.Implicits.global
+class GremlinSampleRunnerTest
+  extends FlatSpec
+  with Matchers
+  with BeforeAndAfter
+  with tests_around_addV
+  with tests_around_id {
 
-  private lazy val provider = SourceProvider.autoCloseable()
+  implicit val context: ExecutionContext = Implicits.global
+
+  protected lazy val provider: SourceProvider = SourceProvider.autoCloseable()
 
   before {
     clean(provider)
