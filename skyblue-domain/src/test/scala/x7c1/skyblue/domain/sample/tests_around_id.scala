@@ -6,7 +6,7 @@ import org.apache.tinkerpop.gremlin.structure.T
 import org.scalatest.{FlatSpec, Matchers}
 
 trait tests_around_id extends FlatSpec with Matchers {
-  self: GremlinSampleRunnerTest =>
+  self: GremlinUsageTest =>
 
   "T.id" can "be identifier when adding vertex" in {
     val await(_) = provider using { g =>

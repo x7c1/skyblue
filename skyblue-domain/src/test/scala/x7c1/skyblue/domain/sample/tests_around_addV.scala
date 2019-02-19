@@ -3,7 +3,7 @@ package x7c1.skyblue.domain.sample
 import org.scalatest.{FlatSpec, Matchers}
 
 trait tests_around_addV extends FlatSpec with Matchers {
-  self: GremlinSampleRunnerTest =>
+  self: GremlinUsageTest =>
 
   "addV" can "add vertex with properties" in {
     val await(_) = provider using { g =>

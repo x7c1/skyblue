@@ -2,28 +2,15 @@ package x7c1.skyblue.domain.sample
 
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal
 import org.apache.tinkerpop.gremlin.structure.Vertex
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import x7c1.skyblue.domain.SourceProvider
-import x7c1.skyblue.domain.sample.SourceProviderInitializer.clean
 
 import scala.collection.JavaConverters.asScalaBufferConverter
-import scala.concurrent.ExecutionContext.Implicits
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-class GremlinSampleRunnerTest
-  extends FlatSpec
-  with Matchers
-  with BeforeAndAfter
+
+class GremlinUsageTest
+  extends WithSourceProvider
   with tests_around_addV
   with tests_around_id {
-
-  implicit val context: ExecutionContext = Implicits.global
-
-  protected lazy val provider: SourceProvider = SourceProvider.autoCloseable()
-
-  before {
-    clean(provider)
-  }
 
   "runner" can "connect to gremlin server" in {
     val await(xs): Future[Seq[Int]] = provider using { g =>
